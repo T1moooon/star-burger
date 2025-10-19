@@ -31,9 +31,9 @@ class OrderAdmin(admin.ModelAdmin):
         'display_info'
     ]
     search_fields = [
-        'first_name',
-        'last_name',
-        'phone',
+        'firstname',
+        'lastname',
+        'phonenumber',
         'address'
     ]
     inlines = [
@@ -41,7 +41,7 @@ class OrderAdmin(admin.ModelAdmin):
     ]
 
     def display_info(self, obj):
-        return f'{obj.first_name} {obj.last_name}, {obj.address}'
+        return f'{obj.firstname} {obj.lastname}, {obj.address}'
     display_info.short_description = 'Заказ'
 
 
