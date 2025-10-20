@@ -5,6 +5,7 @@ from django.templatetags.static import static
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import serializers
+from rest_framework import status
 
 from .models import Product
 from .models import Order
@@ -70,11 +71,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    products = OrderItemSerializer(many=True, allow_empty=False)
+    products = OrderItemSerializer(many=True, allow_empty=False, write_only=True)
 
     class Meta:
         model = Order
-        fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
+        fields = ['id', 'firstname', 'lastname', 'phonenumber', 'address', 'products']
 
 
 @api_view(['POST'])
@@ -93,5 +94,5 @@ def register_order(request):
     order_items = [OrderItem(order=order, **fields) for fields in products_fields]
 
     OrderItem.objects.bulk_create(order_items)
-
-    return Response({})
+    output_serializer = OrderSerializer(order)
+    return Response(output_serializer.data, status=200)
