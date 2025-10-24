@@ -1,5 +1,13 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.db.models import (
+    Sum,
+    F,
+    DecimalField,
+    ExpressionWrapper,
+    Value
+    )
+from django.db.models.functions import Coalesce
 from phonenumber_field.modelfields import PhoneNumberField
 
 
@@ -124,11 +132,27 @@ class RestaurantMenuItem(models.Model):
         return f"{self.restaurant.name} - {self.product.name}"
 
 
+class OrderQuerySet(models.QuerySet):
+    def with_total_cost(self):
+        position_sum = ExpressionWrapper(
+            F('items__quantity') * F('items__product__price'),
+            output_field=DecimalField(max_digits=8, decimal_places=2),
+        )
+        return self.annotate(
+            total_cost=Coalesce(
+                Sum(position_sum),
+                Value(0, output_field=DecimalField(max_digits=8, decimal_places=2))
+            )
+        )
+
+
 class Order(models.Model):
     firstname = models.CharField('Имя', max_length=150)
     lastname = models.CharField('Фамилия', max_length=150)
     phonenumber = PhoneNumberField('Телефон')
     address = models.CharField('Адрес', max_length=255)
+
+    objects = OrderQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'Заказ'

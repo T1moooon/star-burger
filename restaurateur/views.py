@@ -94,6 +94,7 @@ def view_restaurants(request):
 def view_orders(request):
     orders = (
         Order.objects
+        .with_total_cost()
         .order_by('id')
     )
     return render(request, 'order_items.html', {'orders': orders})
