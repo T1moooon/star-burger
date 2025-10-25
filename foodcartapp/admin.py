@@ -19,9 +19,13 @@ class RestaurantMenuItemInline(admin.TabularInline):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = [
+    fields = [
         'product',
-        'quantity'
+        'quantity',
+        'price'
+    ]
+    readonly_fields = [
+        'product'
     ]
 
 

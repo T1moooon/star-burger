@@ -178,10 +178,16 @@ class OrderItem(models.Model):
         validators=[MinValueValidator(1)],
         default=1
         )
+    price = models.DecimalField(
+        'Цена позиции',
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
 
     class Meta:
         verbose_name = 'Позиция заказа'
         verbose_name_plural = 'Позиции заказа'
 
     def __str__(self):
-        return f'{self.product.name} x{self.quantity}'
+        return f'{self.product.name} x{self.quantity} по {self.price}'
