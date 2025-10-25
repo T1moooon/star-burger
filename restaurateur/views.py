@@ -95,6 +95,7 @@ def view_orders(request):
     orders = (
         Order.objects
         .with_total_cost()
+        .exclude(status__in=['completed'])
         .order_by('id')
     )
     return render(request, 'order_items.html', {'orders': orders})
