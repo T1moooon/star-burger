@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.db.models import (
     Sum,
@@ -166,6 +167,10 @@ class Order(models.Model):
         default='raw',
         db_index=True
     )
+    created_at = models.DateTimeField('Дата оформления', default=timezone.now())
+    called_at = models.DateTimeField('Дата звонка', blank=True, null=True)
+    delivered_at = models.DateTimeField('Дата доставки', blank=True, null=True)
+
     class Meta:
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
