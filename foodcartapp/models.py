@@ -181,6 +181,14 @@ class Order(models.Model):
         default='cash',
         db_index=True
     )
+    restaurant = models.ForeignKey(
+        Restaurant,
+        verbose_name='Ресторан',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='orders'
+    )
 
     class Meta:
         verbose_name = 'Заказ'

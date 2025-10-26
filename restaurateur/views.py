@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
@@ -8,7 +10,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 
-from foodcartapp.models import Product, Restaurant, Order
+from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
 
 
 class Login(forms.Form):
@@ -95,7 +97,47 @@ def view_orders(request):
     orders = (
         Order.objects
         .with_total_cost()
+        .prefetch_related('items__product')
         .exclude(status__in=['completed'])
-        .order_by('id')
+        .order_by('-created_at')
     )
+    menu_items = (
+        RestaurantMenuItem.objects
+        .filter(availability=True)
+        .values('product_id', 'restaurant_id')
+    )
+
+    product_to_restaurants = defaultdict(list)
+    for item in menu_items:
+        product_to_restaurants[item['product_id']].append(item['restaurant_id'])
+
+    restaurants = Restaurant.objects.in_bulk()
+
+    for order in orders:
+        product_ids = [item.product.id for item in order.items.all()]
+
+        if not product_ids:
+            order.available_restaurants = []
+            continue
+
+        common_restaurants = None
+        for product_id in product_ids:
+            if product_id not in product_to_restaurants:
+                common_restaurants = []
+                break
+
+            if common_restaurants is None:
+                common_restaurants = set(product_to_restaurants[product_id])
+            else:
+                common_restaurants.intersection_update(
+                    product_to_restaurants[product_id]
+                )
+
+        if common_restaurants:
+            order.available_restaurants = [
+                restaurants[restaurant_id]
+                for restaurant_id in common_restaurants
+            ]
+        else:
+            order.available_restaurants = []
     return render(request, 'order_items.html', {'orders': orders})
