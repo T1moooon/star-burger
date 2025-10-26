@@ -99,7 +99,7 @@ def view_orders(request):
         .with_total_cost()
         .prefetch_related('items__product')
         .exclude(status__in=['completed'])
-        .order_by('-created_at')
+        .order_by('-status')
     )
     menu_items = (
         RestaurantMenuItem.objects
