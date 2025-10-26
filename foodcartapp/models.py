@@ -154,12 +154,19 @@ class Order(models.Model):
         ('delivery', 'Доставка'),
         ('completed', 'Завершен'),
     ]
+    PAYMENTS = [
+        ('cash', 'Наличностью'),
+        ('electronic', 'Электронно')
+    ]
     firstname = models.CharField('Имя', max_length=150)
     lastname = models.CharField('Фамилия', max_length=150)
     phonenumber = PhoneNumberField('Телефон')
     address = models.CharField('Адрес', max_length=255)
     comment = models.TextField('Комментарий', blank=True)
     objects = OrderQuerySet.as_manager()
+    created_at = models.DateTimeField('Дата оформления', default=timezone.now())
+    called_at = models.DateTimeField('Дата звонка', blank=True, null=True)
+    delivered_at = models.DateTimeField('Дата доставки', blank=True, null=True)
     status = models.CharField(
         'Статус',
         max_length=20,
@@ -167,9 +174,13 @@ class Order(models.Model):
         default='raw',
         db_index=True
     )
-    created_at = models.DateTimeField('Дата оформления', default=timezone.now())
-    called_at = models.DateTimeField('Дата звонка', blank=True, null=True)
-    delivered_at = models.DateTimeField('Дата доставки', blank=True, null=True)
+    payment_type = models.CharField(
+        'Способ оплаты',
+        max_length=20,
+        choices=PAYMENTS,
+        default='cash',
+        db_index=True
+    )
 
     class Meta:
         verbose_name = 'Заказ'
