@@ -5,3 +5,5 @@ environs[django]==14.2.*
 djangorestframework==3.16.1
 requests==2.32.5
 geopy==2.4.1
+phonenumbers==8.13.0
+django-phonenumber-field==8.2.0
