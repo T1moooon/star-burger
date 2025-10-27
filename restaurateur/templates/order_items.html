@@ -42,9 +42,13 @@
           {% else %}
             <details>
               <p><summary>Выберите ресторан</summary></p>
-              <div>
-                {% for restaurant in order.available_restaurants %}
-                  <p>• {{ restaurant.name }}</p>
+               <div>
+                {% for restaurant, distance in order.distances %}
+                {% if distance %}
+                  <p>• {{ restaurant.name }} - {{ distance }} км.</p>
+                {% else %}
+                  <p>Ошибка определения координат</p>
+                {% endif %}
                 {% empty %}
                   <p>Нет доступных ресторанов</p>
                 {% endfor %}

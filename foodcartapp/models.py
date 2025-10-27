@@ -164,7 +164,7 @@ class Order(models.Model):
     address = models.CharField('Адрес', max_length=255)
     comment = models.TextField('Комментарий', blank=True)
     objects = OrderQuerySet.as_manager()
-    created_at = models.DateTimeField('Дата оформления', default=timezone.now())
+    created_at = models.DateTimeField('Дата оформления', default=timezone.now)
     called_at = models.DateTimeField('Дата звонка', blank=True, null=True)
     delivered_at = models.DateTimeField('Дата доставки', blank=True, null=True)
     status = models.CharField(

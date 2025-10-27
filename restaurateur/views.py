@@ -1,10 +1,13 @@
 from collections import defaultdict
 
+import requests
+from geopy import distance
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
+from django.conf import settings
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
@@ -92,15 +95,40 @@ def view_restaurants(request):
     })
 
 
+def fetch_coordinates(apikey, address):
+    base_url = "https://geocode-maps.yandex.ru/1.x"
+    response = requests.get(base_url, params={
+        "geocode": address,
+        "apikey": apikey,
+        "format": "json",
+    })
+    response.raise_for_status()
+    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+
+    if not found_places:
+        return None
+
+    most_relevant = found_places[0]
+    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+    return lon, lat
+
+
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
+    apikey = settings.YANDEX_APIKEY
     orders = (
         Order.objects
-        .with_total_cost()
-        .prefetch_related('items__product')
         .exclude(status__in=['completed'])
+        .prefetch_related('items__product')
         .order_by('-status')
+        .with_total_cost()
     )
+    restaurants = Restaurant.objects.all()
+
+    restaurant_coords = {}
+    for restaurant in restaurants:
+        restaurant_coords[restaurant.id] = fetch_coordinates(apikey, restaurant.address)
+
     menu_items = (
         RestaurantMenuItem.objects
         .filter(availability=True)
@@ -138,6 +166,24 @@ def view_orders(request):
                 restaurants[restaurant_id]
                 for restaurant_id in common_restaurants
             ]
+
+            order_coord = fetch_coordinates(apikey, order.address)
+            if order_coord:
+                distances = []
+                for restaurant in order.available_restaurants:
+                    restaurant_coord = restaurant_coords.get(restaurant.id)
+                    if restaurant_coord:
+                        dist = round(distance.distance(order_coord, restaurant_coord).km, 2)
+                        distances.append((restaurant, dist))
+                    else:
+                        distances.append((restaurant, None))
+                order.distances = sorted(
+                    distances,
+                    key=lambda x: (x[1] is None, x[1])
+                )
+            else:
+                order.distances = [(restaurant, None) for restaurant in order.available_restaurants]
         else:
             order.available_restaurants = []
+            order.distances = []
     return render(request, 'order_items.html', {'orders': orders})
