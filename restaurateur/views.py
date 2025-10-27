@@ -1,19 +1,18 @@
 from collections import defaultdict
 
-import requests
 from geopy import distance
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
-from django.conf import settings
-
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 
 from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
+from geo.models import Location
+from geo.utils import get_or_create_location
 
 
 class Login(forms.Form):
@@ -95,27 +94,8 @@ def view_restaurants(request):
     })
 
 
-def fetch_coordinates(apikey, address):
-    base_url = "https://geocode-maps.yandex.ru/1.x"
-    response = requests.get(base_url, params={
-        "geocode": address,
-        "apikey": apikey,
-        "format": "json",
-    })
-    response.raise_for_status()
-    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
-
-    if not found_places:
-        return None
-
-    most_relevant = found_places[0]
-    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
-    return lon, lat
-
-
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    apikey = settings.YANDEX_APIKEY
     orders = (
         Order.objects
         .exclude(status__in=['completed'])
@@ -125,9 +105,30 @@ def view_orders(request):
     )
     restaurants = Restaurant.objects.all()
 
+    restaurant_addresses = [restaurant.address.strip() for restaurant in restaurants]
+    order_addresses = [order.address.strip() for order in orders]
+    all_addresses = list(set(restaurant_addresses + order_addresses))
+    locations = Location.objects.filter(address__in=all_addresses)
+    location_by_address = {
+        location.address.strip(): (float(location.latitude), float(location.longitude))
+        for location in locations if location.latitude and location.longitude
+    }
+
+    for address in all_addresses:
+        if not address or address in location_by_address:
+            continue
+
+        location = get_or_create_location(address)
+        if location and location.latitude and location.longitude:
+            location_by_address[address] = (
+                float(location.latitude), float(location.longitude)
+            )
+
     restaurant_coords = {}
     for restaurant in restaurants:
-        restaurant_coords[restaurant.id] = fetch_coordinates(apikey, restaurant.address)
+        coords = location_by_address.get(restaurant.address.strip())
+        if coords:
+            restaurant_coords[restaurant.id] = coords
 
     menu_items = (
         RestaurantMenuItem.objects
@@ -167,7 +168,7 @@ def view_orders(request):
                 for restaurant_id in common_restaurants
             ]
 
-            order_coord = fetch_coordinates(apikey, order.address)
+            order_coord = location_by_address.get(order.address.strip())
             if order_coord:
                 distances = []
                 for restaurant in order.available_restaurants:
