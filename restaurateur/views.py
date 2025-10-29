@@ -99,6 +99,7 @@ def view_orders(request):
     orders = (
         Order.objects
         .exclude(status__in=['completed'])
+        .select_related('restaurant')
         .prefetch_related('items__product')
         .order_by('-status')
         .with_total_cost()
