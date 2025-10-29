@@ -146,22 +146,14 @@ def view_orders(request):
     for order in orders:
         product_ids = [item.product.id for item in order.items.all()]
 
-        if not product_ids:
-            order.available_restaurants = []
-            continue
-
-        common_restaurants = None
-        for product_id in product_ids:
-            if product_id not in product_to_restaurants:
-                common_restaurants = []
-                break
-
-            if common_restaurants is None:
-                common_restaurants = set(product_to_restaurants[product_id])
-            else:
-                common_restaurants.intersection_update(
-                    product_to_restaurants[product_id]
-                )
+        restaurant_sets = [
+            set(product_to_restaurants.get(product_id, ()))
+            for product_id in product_ids
+        ]
+        common_restaurants = (
+            set.intersection(*restaurant_sets)
+            if restaurant_sets else set()
+        )
 
         if common_restaurants:
             order.available_restaurants = [
