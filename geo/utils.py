@@ -11,6 +11,8 @@ def fetch_coordinates(address):
         "apikey": settings.YANDEX_APIKEY,
         "format": "json",
     })
+    if response.status_code in {401, 404, 500}:
+        raise RuntimeError(f'Yandex geocoder вернул {response.status_code}')
     response.raise_for_status()
     found_places = response.json()['response']['GeoObjectCollection']['featureMember']
 
