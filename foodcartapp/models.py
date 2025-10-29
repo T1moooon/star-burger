@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator
@@ -10,6 +12,10 @@ from django.db.models import (
     )
 from django.db.models.functions import Coalesce
 from phonenumber_field.modelfields import PhoneNumberField
+from geopy import distance
+
+from geo.models import Location
+from geo.utils import get_or_create_location
 
 
 class Restaurant(models.Model):
@@ -145,6 +151,90 @@ class OrderQuerySet(models.QuerySet):
                 Value(0, output_field=DecimalField(max_digits=8, decimal_places=2))
             )
         )
+
+    def with_available_restaurants(self):
+        orders = list(self)
+        if not orders:
+            return orders
+
+        restaurants = Restaurant.objects.all()
+
+        restaurant_addresses = [restaurant.address.strip() for restaurant in restaurants]
+        order_addresses = [order.address.strip() for order in orders]
+        all_addresses = list(set(restaurant_addresses + order_addresses))
+
+        locations = Location.objects.filter(address__in=all_addresses)
+        location_by_address = {
+            location.address.strip(): (float(location.latitude), float(location.longitude))
+            for location in locations if location.latitude and location.longitude
+        }
+
+        for address in all_addresses:
+            if not address or address in location_by_address:
+                continue
+
+            location = get_or_create_location(address)
+            if location and location.latitude and location.longitude:
+                location_by_address[address] = (
+                    float(location.latitude), float(location.longitude)
+                )
+
+        restaurant_coords = {}
+        for restaurant in restaurants:
+            coords = location_by_address.get(restaurant.address.strip())
+            if coords:
+                restaurant_coords[restaurant.id] = coords
+
+        menu_items = (
+            RestaurantMenuItem.objects
+            .filter(availability=True)
+            .values('product_id', 'restaurant_id')
+        )
+
+        product_to_restaurants = defaultdict(list)
+        for item in menu_items:
+            product_to_restaurants[item['product_id']].append(item['restaurant_id'])
+
+        restaurants_by_id = Restaurant.objects.in_bulk()
+
+        for order in orders:
+            product_ids = [item.product.id for item in order.items.all()]
+            restaurant_sets = [
+                set(product_to_restaurants.get(product_id, ()))
+                for product_id in product_ids
+            ]
+            common_restaurants = (
+                set.intersection(*restaurant_sets)
+                if restaurant_sets else set()
+            )
+
+            if common_restaurants:
+                order.available_restaurants = [
+                    restaurants_by_id[restaurant_id]
+                    for restaurant_id in common_restaurants
+                ]
+
+                order_coord = location_by_address.get(order.address.strip())
+                if order_coord:
+                    distances = []
+                    for restaurant in order.available_restaurants:
+                        restaurant_coord = restaurant_coords.get(restaurant.id)
+                        if restaurant_coord:
+                            dist = round(distance.distance(order_coord, restaurant_coord).km, 2)
+                            distances.append((restaurant, dist))
+                        else:
+                            distances.append((restaurant, None))
+                    order.distances = sorted(
+                        distances,
+                        key=lambda x: (x[1] is None, x[1])
+                    )
+                else:
+                    order.distances = [(restaurant, None) for restaurant in order.available_restaurants]
+            else:
+                order.available_restaurants = []
+                order.distances = []
+
+        return orders
 
 
 class Order(models.Model):
