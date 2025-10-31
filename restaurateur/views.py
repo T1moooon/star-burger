@@ -132,24 +132,28 @@ def view_orders(request):
             restaurant_coords[restaurant.id] = coords
 
     for order in orders:
-        if order.available_restaurants:
-            order_coord = location_by_address.get(order.address.strip())
-            if order_coord:
-                distances = []
-                for restaurant in order.available_restaurants:
-                    restaurant_coord = restaurant_coords.get(restaurant.id)
-                    if restaurant_coord:
-                        dist = round(distance.distance(order_coord, restaurant_coord).km, 2)
-                        distances.append((restaurant, dist))
-                    else:
-                        distances.append((restaurant, None))
-                order.distances = sorted(
-                    distances,
-                    key=lambda x: (x[1] is None, x[1])
-                )
-            else:
-                order.distances = [(restaurant, None) for restaurant in order.available_restaurants]
-        else:
+        order.distance_lookup_failed = False
+        if not order.available_restaurants:
             order.distances = []
+            continue
+
+        order_coord = location_by_address.get(order.address.strip())
+        if not order_coord:
+            order.distances = [(restaurant, None) for restaurant in order.available_restaurants]
+            order.distance_lookup_failed = True
+            continue
+
+        distances = []
+        for restaurant in order.available_restaurants:
+            restaurant_coord = restaurant_coords.get(restaurant.id)
+            if restaurant_coord:
+                dist = round(distance.distance(order_coord, restaurant_coord).km, 2)
+                distances.append((restaurant, dist))
+            else:
+                distances.append((restaurant, None))
+        order.distances = sorted(
+            distances,
+            key=lambda x: (x[1] is None, x[1])
+        )
 
     return render(request, 'order_items.html', {'orders': orders})

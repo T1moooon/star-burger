@@ -37,23 +37,25 @@
         <td>{{ order.comment }}</td>
         <td> 
           {% if order.restaurant %}
-            <p>Готовит: </p>
+            <p>Готовит:</p>
             <p>{{ order.restaurant.name }}</p>
-          {% else %}
+          {% elif order.distance_lookup_failed %}
+            <p>Адрес не найден</p>
+          {% elif order.available_restaurants %}
             <details>
-              <p><summary>Адрес не найден</summary></p>
-               <div>
+              <p><summary>Выберите ресторан</summary></p>
+              <div>
                 {% for restaurant, distance in order.distances %}
-                {% if distance %}
-                  <p>• {{ restaurant.name }} - {{ distance }} км.</p>
-                {% else %}
-                  <p>Адрес не найден</p>
-                {% endif %}
-                {% empty %}
-                  <p>Нет доступных ресторанов</p>
+                  {% if distance %}
+                    <p>• {{ restaurant.name }} - {{ distance }} км.</p>
+                  {% else %}
+                    <p>• {{ restaurant.name }}</p>
+                  {% endif %}
                 {% endfor %}
               </div>
             </details>
+          {% else %}
+            <p>Нет доступных ресторанов</p>
           {% endif %}
         </td>
         <td>
