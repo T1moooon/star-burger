@@ -54,9 +54,10 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-Определите переменную окружения `SECRET_KEY`. Создать файл `.env` в каталоге `star_burger/` и положите туда такой код:
+Определите переменные окружения. Создайте файл `.env` в каталоге `star_burger/` и положите туда, как минимум, такие настройки:
 ```sh
 SECRET_KEY=django-insecure-0if40nf4nf93n4
+DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DBNAME
 ```
 
 Так же необходимо добавить переменную окружения с API-ключом от Яндекса Геокодер, получить можно [тут](https://developer.tech.yandex.ru/services).
@@ -69,7 +70,14 @@ API-ключ от [Rollbar](https://rollbar.com).
 ROLLBAR_TOKEN=ваш-apikey
 ```
 
-Создайте файл базы данных SQLite и отмигрируйте её следующей командой:
+Если вы используете PostgreSQL (или другую СУБД), укажите URL подключения в переменной `DATABASE_URL`. Примеры:
+
+```sh
+# PostgreSQL
+DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DBNAME
+```
+
+Создайте базу данных (в соответствии с переменной `DATABASE_URL`) и примените миграции следующей командой:
 
 ```sh
 python manage.py migrate
