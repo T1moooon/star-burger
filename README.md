@@ -169,6 +169,18 @@ Parcel будет следить за файлами в каталоге `bundle
 - `ROLLBAR_TOKEN` — API-ключ от [Rollbar](https://rollbar.com).
 - `ROLLBAR_ENVIRONMENT` - настройка профиля Rollbar, не обязательная переменная (профиль по умолчанию 'development'). Для указания профиля добавьте переменную окружения например: `ROLLBAR_ENVIRONMENT=production`.
 
+## Быстрое обновление кода на сервере (prod-версии сайта)
+Используйте Bash скрипт деплоя:
+
+```sh
+./deploy
+```
+Если у файла нет прав на исполнение выполните команду:
+
+```sh
+chmod +x deploy
+```
+
 ## Цели проекта
 
 Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org). За основу был взят код проекта [FoodCart](https://github.com/Saibharath79/FoodCart).
