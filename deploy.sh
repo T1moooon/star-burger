@@ -29,5 +29,17 @@ sudo systemctl reload postgresql
 sudo systemctl reload django
 sudo systemctl reload nginx
 
+echo "Предупреждаем Rollbar о деплое."
+export $(grep -v '^#' .env | xargs)
+
+REVISION=$(git rev-parse HEAD)
+USERNAME=$(whoami)
+
+curl -H "X-Rollbar-Access-Token: $ROLLBAR_ACCESS_TOKEN" \
+-X POST 'https://api.rollbar.com/api/1/deploy' \
+-d environment=$ROLLBAR_ENVIRONMENT \
+-d revision=$REVISION \
+-d local_username=$USERNAME
+
 echo "=== Деплой успешно завершен! ==="
 echo "Сайт готов к работе."
