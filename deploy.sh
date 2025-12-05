@@ -15,7 +15,7 @@ echo "Устанавливаю/обновляю Node.js библиотеки..."
 npm ci --dev
 
 echo "Пересобираю JS-код (фронтенд)..."
-./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --publ>
+./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 
 echo "Пересобираю статику Django..."
 python manage.py collectstatic --noinput
