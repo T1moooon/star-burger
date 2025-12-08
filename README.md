@@ -66,7 +66,7 @@ DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DBNAME
 YANDEX_APIKEY=ваш-apikey
 ```
 
-API-ключ от [Rollbar](https://rollbar.com). Необязательная настройка. 
+API-ключ от [Rollbar](https://rollbar.com). Необязательная настройка.
 ```sh
 ROLLBAR_TOKEN=ваш-apikey
 ```
