@@ -1,3 +1,7 @@
+clean_dump.json
+datadump.json
+server.py.save
+staticfiles/
 bundles/**
 node_modules/
 media/
