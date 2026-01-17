@@ -170,6 +170,34 @@ Parcel будет следить за файлами в каталоге `bundle
 - `ROLLBAR_TOKEN` — API-ключ от [Rollbar](https://rollbar.com).
 - `ROLLBAR_ENVIRONMENT` - настройка профиля Rollbar, не обязательная переменная (профиль по умолчанию 'development'). Для указания профиля добавьте переменную окружения например: `ROLLBAR_ENVIRONMENT=production`.
 
+## Запуск через Docker
+
+Для запуска проекта вам понадобится [Docker](https://docs.docker.com/get-docker/) и [Docker Compose](https://docs.docker.com/compose/install/).
+
+### Подготовка
+
+1. Создайте файл `.env` в корневой директории и заполните его необходимыми переменными (см. разделы выше). Для работы с Docker вам также понадобятся настройки для базы данных PostgreSQL:
+   ```env
+   POSTGRES_DB=starburger
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   ```
+2. Если вы хотите запустить проект в режиме разработки (с автоматической перезагрузкой и watch-режимом для фронтенда), создайте файл `docker-compose.override.yml`:
+   ```sh
+   cp docker-compose.override.yml.example docker-compose.override.yml
+   ```
+
+### Запуск
+
+Чтобы собрать образы и запустить контейнеры, выполните:
+```sh
+docker compose up -d
+```
+
+После успешного запуска:
+- Сайт будет доступен по адресу [http://localhost:8000/](http://localhost:8000/)
+- Админка доступна по адресу [http://localhost:8000/admin/](http://localhost:8000/admin/)
+
 ## Быстрое обновление кода на сервере (prod-версии сайта)
 Используйте Bash скрипт деплоя:
 
