@@ -1,10 +1,12 @@
+docker-compose.override.yml
+starburger.dump
 clean_dump.json
 datadump.json
 server.py.save
 staticfiles/
-bundles/**
+frontend/bundles/**
 node_modules/
-media/
+backend/media/
 .idea
 # Byte-compiled / optimized / DLL files
 __pycache__/

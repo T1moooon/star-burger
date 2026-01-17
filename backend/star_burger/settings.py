@@ -19,7 +19,7 @@ DEBUG = env.bool('DEBUG', True)
 ROLLBAR_ACCESS_TOKEN = env('ROLLBAR_ACCESS_TOKEN', default='')
 ROLLBAR_ENVIRONMENT = env('ROLLBAR_ENVIRONMENT', 'development')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', ['127.0.0.1', 'localhost'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', ['127.0.0.1', 'localhost', 'backend'])
 
 INSTALLED_APPS = [
     'foodcartapp.apps.FoodcartappConfig',
@@ -119,9 +119,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-INTERNAL_IPS = [
-    '127.0.0.1'
-]
+INTERNAL_IPS = env.list('INTERNAL_IPS', ['127.0.0.1'])
 
 
 STATICFILES_DIRS = [
