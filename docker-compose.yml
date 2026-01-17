@@ -25,6 +25,7 @@ services:
     command: sh -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn star_burger.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - ./backend/media:/app/media
+      - ./backend/staticfiles:/app/staticfiles
     env_file:
       - .env
     environment:
