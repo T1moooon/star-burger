@@ -31,7 +31,7 @@ DEBUG = env.bool('DEBUG', True)
 ROLLBAR_ACCESS_TOKEN = env('ROLLBAR_ACCESS_TOKEN', default='')
 ROLLBAR_ENVIRONMENT = env('ROLLBAR_ENVIRONMENT', 'development')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', ['127.0.0.1', 'localhost', 'backend'])
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', ['127.0.0.1', 'localhost', 'www.testerdomen.ru', 'testerdomen.ru'])
 
 INSTALLED_APPS = [
     'foodcartapp.apps.FoodcartappConfig',
