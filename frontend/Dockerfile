@@ -1,4 +1,4 @@
-FROM node:18-bookworm-slim
+FROM node:16-bullseye-slim
 WORKDIR /app
 
 RUN apt-get update \
