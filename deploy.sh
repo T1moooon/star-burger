@@ -11,7 +11,7 @@ echo "[2] Остановка старых контейнеров"
 docker compose down --remove-orphans
 
 echo "[3] Сборка фронтенда"
-docker compose run --rm frontend
+docker compose run --rm --build frontend
 
 echo "[4] Запуск контейнеров (кроме backend)"
 docker compose up -d db
