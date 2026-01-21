@@ -4,21 +4,31 @@ set -e
 # Переходим в директорию проекта
 cd "$(dirname "$0")"
 
+COMPOSE_FILE=${COMPOSE_FILE:-docker-compose.prod.yml}
+if [ ! -f "$COMPOSE_FILE" ]; then
+    echo "Файл compose не найден: $COMPOSE_FILE"
+    exit 1
+fi
+
+compose() {
+    docker compose -f "$COMPOSE_FILE" "$@"
+}
+
 echo "[1] Обновление кода"
 git pull origin main
 
 echo "[2] Остановка старых контейнеров"
-docker compose down --remove-orphans
+compose down --remove-orphans
 
 echo "[3] Сборка фронтенда"
-docker compose run --rm --build frontend
+compose run --rm --build frontend
 
 echo "[4] Запуск контейнеров (кроме backend)"
-docker compose up -d db
+compose up -d db
 
 echo "[5] Ожидание БД"
 # Ждем пока база будет готова. В docker-compose.yml есть healthcheck.
-until [ "$(docker compose ps -q db | xargs docker inspect -f '{{.State.Health.Status}}' 2>/dev/null)" == "healthy" ]; do
+until [ "$(compose ps -q db | xargs docker inspect -f '{{.State.Health.Status}}' 2>/dev/null)" == "healthy" ]; do
     echo "Ожидание готовности базы данных..."
     sleep 2
 done
@@ -29,14 +39,23 @@ if [ -f .env ]; then
 fi
 
 echo "[6] Запускаем остальные сервисы"
-docker compose up -d --build
+compose up -d --build
 
 echo "[7] Миграции и статика"
-docker compose exec -T backend python manage.py migrate --noinput
-docker compose exec -T backend python manage.py collectstatic --noinput
+compose exec -T backend python manage.py migrate --noinput
+compose exec -T backend python manage.py collectstatic --noinput
 
 echo "[8] Перезапуск nginx"
-docker compose exec -T nginx nginx -s reload
+if compose config --services | grep -qx "nginx"; then
+    NGINX_ID=$(compose ps -q nginx 2>/dev/null || true)
+    if [ -n "$NGINX_ID" ]; then
+        compose exec -T nginx nginx -s reload
+    else
+        echo "nginx не запущен, пропускаем перезапуск"
+    fi
+else
+    echo "nginx не определен в compose, пропускаем перезапуск"
+fi
 
 echo "[9] Уведомление Rollbar"
 REVISION=$(git rev-parse HEAD)
@@ -54,4 +73,4 @@ else
 fi
 
 echo "Готово"
-docker compose ps
+compose ps
