@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15
-    restart: unless-stopped
+    restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
@@ -19,7 +19,7 @@ services:
   backend:
     build:
       context: ./backend
-    restart: unless-stopped
+    restart: always
     command: sh -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn star_burger.wsgi:application --bind 0.0.0.0:8000"
     env_file:
       - .env
@@ -46,7 +46,7 @@ services:
 
   nginx:
     image: nginx:latest
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
       - "443:443"
