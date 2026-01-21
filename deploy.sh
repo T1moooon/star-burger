@@ -1,45 +1,57 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
-echo "=== Начало деплоя ==="
-echo "Обновляю код репозитория..."
-git pull
+# Переходим в директорию проекта
+cd "$(dirname "$0")"
 
-echo "Активирую виртуальное окружение Python..."
-source venv/bin/activate
+echo "[1] Обновление кода"
+git pull origin main
 
-echo "Устанавливаю Python-библиотеки из requirements.txt..."
-pip install -r requirements.txt
+echo "[2] Остановка старых контейнеров"
+docker compose down --remove-orphans
 
-echo "Устанавливаю/обновляю Node.js библиотеки..."
-npm ci --dev
+echo "[3] Сборка фронтенда"
+docker compose run --rm frontend
 
-echo "Пересобираю JS-код (фронтенд)..."
-./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
+echo "[4] Запуск контейнеров (кроме backend)"
+docker compose up -d db
 
-echo "Пересобираю статику Django..."
-python manage.py collectstatic --noinput
+echo "[5] Ожидание БД"
+# Ждем пока база будет готова. В docker-compose.yml есть healthcheck.
+until [ "$(docker compose ps -q db | xargs docker inspect -f '{{.State.Health.Status}}' 2>/dev/null)" == "healthy" ]; do
+    echo "Ожидание готовности базы данных..."
+    sleep 2
+done
 
-echo "Применяю миграции базы данных..."
-python manage.py migrate
+# Загружаем переменные из .env для работы с БД и Rollbar
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
 
-echo "Перезапускаю сервисы Systemd..."
-sudo systemctl daemon-reload
-sudo systemctl reload postgresql
-sudo systemctl reload django
-sudo systemctl reload nginx
+echo "[6] Запускаем остальные сервисы"
+docker compose up -d --build
 
-echo "Предупреждаем Rollbar о деплое."
-export $(grep -v '^#' .env | xargs)
+echo "[7] Миграции и статика"
+docker compose exec -T backend python manage.py migrate --noinput
+docker compose exec -T backend python manage.py collectstatic --noinput
 
+echo "[8] Перезапуск nginx"
+docker compose exec -T nginx nginx -s reload
+
+echo "[9] Уведомление Rollbar"
 REVISION=$(git rev-parse HEAD)
 USERNAME=$(whoami)
 
-curl -H "X-Rollbar-Access-Token: $ROLLBAR_ACCESS_TOKEN" \
--X POST 'https://api.rollbar.com/api/1/deploy' \
--d environment=$ROLLBAR_ENVIRONMENT \
--d revision=$REVISION \
--d local_username=$USERNAME
+if [ -n "$ROLLBAR_ACCESS_TOKEN" ]; then
+    curl -H "X-Rollbar-Access-Token: $ROLLBAR_ACCESS_TOKEN" \
+         -X POST 'https://api.rollbar.com/api/1/deploy' \
+         -d environment="$ROLLBAR_ENVIRONMENT" \
+         -d revision="$REVISION" \
+         -d local_username="$USERNAME"
+    echo "Уведомление в Rollbar отправлено"
+else
+    echo "ROLLBAR_ACCESS_TOKEN не найден, пропускаем уведомление"
+fi
 
-echo "=== Деплой успешно завершен! ==="
-echo "Сайт готов к работе."
+echo "Готово"
+docker compose ps

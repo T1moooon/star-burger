@@ -35,7 +35,7 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./backend/staticfiles:/app/staticfiles
-      - ./backend/media:/app/media
+      - media_data:/app/media
 
   frontend:
     build:
@@ -53,10 +53,10 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - /etc/letsencrypt/:/etc/letsencrypt/
-      - ./backend/media:/app/media
+      - media_data:/app/media
       - ./backend/staticfiles:/app/staticfiles
     depends_on:
       - backend
 volumes:
+  media_data:
   postgres_data:
-
