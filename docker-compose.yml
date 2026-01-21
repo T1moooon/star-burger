@@ -24,8 +24,8 @@ services:
     volumes:
       - ./backend/media:/app/media
       - ./backend/staticfiles:/app/staticfiles
-      - ./frontend/assets:/app/assets:ro
-      - ./frontend/bundles:/app/bundles:ro
+      - ./frontend/assets:/frontend/assets:ro
+      - ./frontend/bundles:/frontend/bundles:ro
     env_file:
       - .env
     environment:

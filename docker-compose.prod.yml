@@ -34,8 +34,8 @@ services:
     volumes:
       - ./backend/staticfiles:/app/staticfiles
       - media_data:/app/media
-      - ./frontend/assets:/app/assets:ro
-      - ./frontend/bundles:/app/bundles:ro
+      - ./frontend/assets:/frontend/assets:ro
+      - ./frontend/bundles:/frontend/bundles:ro
 
   frontend:
     build:
