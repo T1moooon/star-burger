@@ -187,28 +187,38 @@ Parcel будет следить за файлами в каталоге `bundle
    cp docker-compose.override.yml.example docker-compose.override.yml
    ```
 
-### Запуск
+### Запуск в режиме разработки
 
 Чтобы собрать образы и запустить контейнеры, выполните:
 ```sh
-docker compose up -d
+docker compose up -d --build
 ```
 
 После успешного запуска:
 - Сайт будет доступен по адресу [http://localhost:8000/](http://localhost:8000/)
 - Админка доступна по адресу [http://localhost:8000/admin/](http://localhost:8000/admin/)
 
-## Быстрое обновление кода на сервере (prod-версии сайта)
-Используйте Bash скрипт деплоя:
+### Запуск в production
+
+Рекомендуемый способ — скрипт деплоя, он использует `docker-compose.prod.yml`:
 
 ```sh
-./deploy
+./deploy.sh
 ```
 Если у файла нет прав на исполнение выполните команду:
 
 ```sh
-chmod +x deploy
+chmod +x deploy.sh
 ```
+
+Скрипт собирает фронтенд, поднимает сервисы, выполняет миграции и сбор статики, затем перезагружает nginx.
+
+Если хотите запускать вручную без скрипта:
+```sh
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Примечание: в `docker-compose.prod.yml` nginx слушает 80/443. Убедитесь, что эти порты свободны, или измените маппинг портов.
 
 ## Цели проекта
 
